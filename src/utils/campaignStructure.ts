@@ -79,7 +79,7 @@ export const generateUTMUrl = (baseUrl: string, params: UTMParameters): string =
     
     url.search = searchParams.toString();
     return url.toString();
-  } catch (error) {
+  } catch {
     // If URL is invalid, just return the original
     return baseUrl;
   }

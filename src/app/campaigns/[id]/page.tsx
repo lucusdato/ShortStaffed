@@ -55,7 +55,7 @@ export default function CampaignDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Campaign Not Found</h2>
-          <p className="text-gray-600 mb-6">The campaign you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-6">The campaign you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             href="/"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -262,7 +262,7 @@ export default function CampaignDetailPage() {
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Campaign</h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                Are you sure you want to delete &quot;{campaign.name}&quot;? This action cannot be undone.
               </p>
               <div className="flex space-x-3">
                 <button

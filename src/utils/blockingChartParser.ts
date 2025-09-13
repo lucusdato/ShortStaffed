@@ -90,10 +90,11 @@ export const parseBlockingChartData = (pastedData: string): BlockingChartRow[] =
       
       // More flexible row detection - look for rows with potential campaign data
       const hasData = values.some(val => val && val.trim());
-      const hasBudgetData = values.some(val => {
-        const clean = val.replace(/[$,]/g, '');
-        return !isNaN(parseFloat(clean)) && parseFloat(clean) > 0;
-      });
+      // Check for budget data in the row
+      // const hasBudgetData = values.some(val => {
+      //   const clean = val.replace(/[$,]/g, '');
+      //   return !isNaN(parseFloat(clean)) && parseFloat(clean) > 0;
+      // });
       
       if (hasData && values.length >= 3) {
         // Detect if this row is missing the channel column due to merged cells
@@ -300,7 +301,7 @@ const splitTabSeparatedLine = (line: string): string[] => {
 };
 
 const getColumnMapping = (columns: string[]) => {
-  const map: any = {};
+  const map: Record<string, number> = {};
   
   columns.forEach((col, index) => {
     const lowerCol = col.toLowerCase().trim();

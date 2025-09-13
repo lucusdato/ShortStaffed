@@ -284,7 +284,7 @@ export function BlockingChartImport({ onImportComplete }: BlockingChartImportPro
           </li>
           <li className="flex items-start">
             <span className="font-semibold mr-2">5.</span>
-            Click "Parse Data" to preview and categorize your campaigns
+            Click &quot;Parse Data&quot; to preview and categorize your campaigns
           </li>
         </ol>
       </div>
