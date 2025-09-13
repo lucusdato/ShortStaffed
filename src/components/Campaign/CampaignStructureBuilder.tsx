@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, ChevronDown, ChevronRight, Link as LinkIcon, Youtube } from 'lucide-react';
+import { Plus, Copy, Trash2, ChevronDown, ChevronRight, Link as LinkIcon, Youtube, Download, FileSpreadsheet } from 'lucide-react';
 import { CampaignShell, TargetingLayer, CreativeShell } from '@/types';
 import { 
   createTargetingLayer, 
@@ -11,6 +11,11 @@ import {
   generateUTMUrl,
   saveCampaignShell
 } from '@/utils/campaignStructure';
+import { 
+  exportCampaignShellsToExcel, 
+  exportCampaignShellsToCSV, 
+  downloadFile 
+} from '@/utils/exportHelpers';
 
 interface CampaignStructureBuilderProps {
   campaignShells: CampaignShell[];
@@ -20,6 +25,28 @@ interface CampaignStructureBuilderProps {
 export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignStructureBuilderProps) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [expandedTargeting, setExpandedTargeting] = useState<Set<string>>(new Set());
+
+  const handleExportExcel = () => {
+    try {
+      const excelData = exportCampaignShellsToExcel(campaignShells);
+      const timestamp = new Date().toISOString().split('T')[0];
+      downloadFile(excelData, `shortstaffed-campaigns-${timestamp}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Error exporting to Excel. Please try again.');
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const csvData = exportCampaignShellsToCSV(campaignShells);
+      const timestamp = new Date().toISOString().split('T')[0];
+      downloadFile(csvData, `shortstaffed-campaigns-${timestamp}.csv`, 'text/csv');
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      alert('Error exporting to CSV. Please try again.');
+    }
+  };
 
   const toggleCampaignExpansion = (campaignId: string) => {
     const newExpanded = new Set(expandedCampaigns);
@@ -157,10 +184,34 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Campaign Structure Builder</h2>
-        <p className="text-gray-600 mb-6">
-          Build out your targeting layers and creative shells for each imported campaign.
-        </p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Campaign Structure Builder</h2>
+            <p className="text-gray-600 mt-1">
+              Build out your targeting layers and creative shells for each imported campaign.
+            </p>
+          </div>
+          {campaignShells.length > 0 && (
+            <div className="flex space-x-3">
+              <button
+                onClick={handleExportExcel}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                title="Export to Excel"
+              >
+                <FileSpreadsheet className="w-5 h-5 mr-2" />
+                Export Excel
+              </button>
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                title="Export to CSV"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Export CSV
+              </button>
+            </div>
+          )}
+        </div>
         
         {campaignShells.length === 0 ? (
           <div className="text-center py-8">
