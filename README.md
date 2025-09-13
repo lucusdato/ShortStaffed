@@ -1,8 +1,8 @@
-# Media Planning Automation Tool
+# ShortStaffed - Media Planning Automation
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flucusdato%2Fmedia-planning-tool)
 
-A Next.js web application that automates media planning workflows, reducing the time needed to create traffic sheets, taxonomies, and campaign structures from 4+ hours to 25 minutes.
+ShortStaffed is a Next.js web application that automates media planning workflows, reducing the time needed to create traffic sheets, taxonomies, and campaign structures from 4+ hours to 25 minutes.
 
 ## What You've Built So Far ✅
 

@@ -70,7 +70,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Media Planning Tool</h1>
+                <h1 className="text-3xl font-bold text-gray-900">ShortStaffed</h1>
                 <p className="text-gray-600 mt-1">Import your digital blocking chart to get started</p>
               </div>
               {campaigns.length > 0 && (
@@ -281,7 +281,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Media Planning Tool</h1>
+              <h1 className="text-3xl font-bold text-gray-900">ShortStaffed</h1>
               <p className="text-gray-600 mt-1">Automate your media planning workflow</p>
             </div>
             <div className="flex space-x-3">
