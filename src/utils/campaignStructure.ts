@@ -51,7 +51,8 @@ export const createCreativeShell = (
   name: string,
   landingPage: string,
   assetLink?: string,
-  youtubeUrl?: string
+  youtubeUrl?: string,
+  accuticsTaxonomyName?: string
 ): CreativeShell => {
   const utmParameters: UTMParameters = {
     term: undefined
@@ -60,6 +61,7 @@ export const createCreativeShell = (
   return {
     id: uuidv4(),
     name,
+    accuticsTaxonomyName: accuticsTaxonomyName || '',
     assetLink,
     youtubeUrl,
     landingPage,

@@ -5,6 +5,7 @@ export interface UTMParameters {
 export interface CreativeShell {
   id: string;
   name: string;
+  accuticsTaxonomyName: string;
   assetLink?: string;
   youtubeUrl?: string;
   landingPage: string;

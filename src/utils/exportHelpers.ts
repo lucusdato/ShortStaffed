@@ -190,6 +190,7 @@ export interface CampaignShellExportRow {
   accuticsLineItem: string;
   creativeId: string;
   creativeName: string;
+  accuticsTaxonomyName: string;
   assetLink: string;
   youtubeUrl: string;
   landingPage: string;
@@ -218,6 +219,7 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
         accuticsLineItem: '',
         creativeId: '',
         creativeName: '',
+        accuticsTaxonomyName: '',
         assetLink: '',
         youtubeUrl: '',
         landingPage: '',
@@ -243,6 +245,7 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
             accuticsLineItem: layer.accuticsLineItem,
             creativeId: '',
             creativeName: '',
+            accuticsTaxonomyName: '',
             assetLink: '',
             youtubeUrl: '',
             landingPage: '',
@@ -266,6 +269,7 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
               accuticsLineItem: layer.accuticsLineItem,
               creativeId: creative.id,
               creativeName: creative.name,
+              accuticsTaxonomyName: creative.accuticsTaxonomyName || '',
               assetLink: creative.assetLink || '',
               youtubeUrl: creative.youtubeUrl || '',
               landingPage: creative.landingPage,
@@ -304,6 +308,7 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
       'accuticsLineItem',
       'creativeId',
       'creativeName',
+      'accuticsTaxonomyName',
       'assetLink',
       'youtubeUrl',
       'landingPage',
@@ -328,6 +333,7 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     'Accutics Line Item',
     'Creative ID',
     'Creative Name',
+    'Accutics Taxonomy Name',
     'Asset Link',
     'YouTube URL',
     'Landing Page',
@@ -353,6 +359,7 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     { wch: 20 }, // Accutics Line Item
     { wch: 15 }, // Creative ID
     { wch: 25 }, // Creative Name
+    { wch: 25 }, // Accutics Taxonomy Name
     { wch: 30 }, // Asset Link
     { wch: 30 }, // YouTube URL
     { wch: 30 }, // Landing Page
@@ -424,6 +431,7 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
     'Accutics Line Item',
     'Creative ID',
     'Creative Name',
+    'Accutics Taxonomy Name',
     'Asset Link',
     'YouTube URL',
     'Landing Page',
@@ -449,6 +457,7 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
       escapeCSVField(row.accuticsLineItem),
       escapeCSVField(row.creativeId),
       escapeCSVField(row.creativeName),
+      escapeCSVField(row.accuticsTaxonomyName),
       escapeCSVField(row.assetLink),
       escapeCSVField(row.youtubeUrl),
       escapeCSVField(row.landingPage),

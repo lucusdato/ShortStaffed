@@ -125,7 +125,7 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
   };
 
   const addCreativeShell = (campaignId: string, layerId: string) => {
-    const newCreative = createCreativeShell('', '');
+    const newCreative = createCreativeShell('', '', undefined, undefined, '');
     const campaign = campaignShells.find(s => s.id === campaignId);
     if (campaign) {
       updateTargetingLayer(campaignId, layerId, {
@@ -456,7 +456,7 @@ function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: C
   return (
     <div className="border rounded bg-green-50 p-3">
       <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Creative Name</label>
             <input
@@ -465,6 +465,16 @@ function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: C
               onChange={(e) => onUpdate({ name: e.target.value })}
               className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
               placeholder="Creative name"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Accutics Taxonomy Name</label>
+            <input
+              type="text"
+              value={creative.accuticsTaxonomyName || ''}
+              onChange={(e) => onUpdate({ accuticsTaxonomyName: e.target.value })}
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+              placeholder="Accutics taxonomy name"
             />
           </div>
           <div>
