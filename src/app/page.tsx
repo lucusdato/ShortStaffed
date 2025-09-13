@@ -264,7 +264,7 @@ export default function Home() {
         </header>
 
         {/* Structure Builder */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <CampaignStructureBuilder 
             campaignShells={campaignShells}
             onUpdate={handleCampaignShellsUpdate}

@@ -182,8 +182,8 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className="space-y-8">
+      <div className="bg-white rounded-lg shadow-sm border p-8">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Campaign Structure Builder</h2>
@@ -218,11 +218,11 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
             <p className="text-gray-500">No campaigns imported yet. Import your blocking chart data first.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {campaignShells.map((campaign) => (
               <div key={campaign.id} className="border rounded-lg bg-gray-50">
                 {/* Campaign Header */}
-                <div className="p-4 border-b bg-white rounded-t-lg">
+                <div className="p-6 border-b bg-white rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <button
@@ -240,14 +240,14 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
                         <div className="text-sm text-gray-600 mb-1">
                           {campaign.platform} • {campaign.objective} • ${campaign.workingMediaBudget}
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-6">
                           <div className="flex-1">
                             <label className="block text-xs font-medium text-gray-700 mb-1">Accutics Campaign Name</label>
                             <input
                               type="text"
                               value={campaign.accuticsCampaignName}
                               onChange={(e) => updateCampaignShell(campaign.id, { accuticsCampaignName: e.target.value })}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                               placeholder="Accutics campaign name"
                             />
                           </div>
@@ -279,7 +279,7 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
 
                 {/* Campaign Content */}
                 {expandedCampaigns.has(campaign.id) && (
-                  <div className="p-4 space-y-4">
+                  <div className="p-6 space-y-6">
                     {campaign.targetingLayers.length === 0 ? (
                       <div className="text-center py-6">
                         <p className="text-gray-500 mb-3">No targeting layers yet</p>
@@ -350,7 +350,7 @@ function TargetingLayerComponent({
   return (
     <div className="border rounded-lg bg-white">
       {/* Targeting Layer Header */}
-      <div className="p-3 border-b bg-blue-50">
+      <div className="p-4 border-b bg-blue-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 flex-1">
             <button
@@ -363,14 +363,14 @@ function TargetingLayerComponent({
                 <ChevronRight className="w-4 h-4" />
               )}
             </button>
-            <div className="flex-1 grid grid-cols-2 gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Audience Name</label>
                 <input
                   type="text"
                   value={layer.audienceName}
                   onChange={(e) => onUpdate({ audienceName: e.target.value })}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Adults 25-45"
                 />
               </div>
@@ -380,7 +380,7 @@ function TargetingLayerComponent({
                   type="text"
                   value={layer.accuticsLineItem}
                   onChange={(e) => onUpdate({ accuticsLineItem: e.target.value })}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., ACC_001"
                 />
               </div>
@@ -414,7 +414,7 @@ function TargetingLayerComponent({
 
       {/* Targeting Layer Content */}
       {isExpanded && (
-        <div className="p-3 space-y-3">
+        <div className="p-4 space-y-4">
           {layer.creatives.length === 0 ? (
             <div className="text-center py-4">
               <p className="text-gray-500 text-sm mb-2">No creatives yet</p>
@@ -454,16 +454,16 @@ interface CreativeShellComponentProps {
 function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: CreativeShellComponentProps) {
 
   return (
-    <div className="border rounded bg-green-50 p-3">
+    <div className="border rounded bg-green-50 p-4">
       <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Creative Name</label>
             <input
               type="text"
               value={creative.name}
               onChange={(e) => onUpdate({ name: e.target.value })}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
               placeholder="Creative name"
             />
           </div>
@@ -473,7 +473,7 @@ function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: C
               type="text"
               value={creative.accuticsTaxonomyName || ''}
               onChange={(e) => onUpdate({ accuticsTaxonomyName: e.target.value })}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
               placeholder="Accutics taxonomy name"
             />
           </div>
@@ -540,7 +540,7 @@ function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: C
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Landing Page</label>
           <input
