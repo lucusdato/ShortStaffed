@@ -17,6 +17,8 @@ export interface BlockingChartRow {
   totalWorkingMediaBudget: string;
   category?: 'brand_say_digital' | 'brand_say_social' | 'other_say_social' | 'uncategorized';
   selected?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const parseBlockingChartData = (pastedData: string): BlockingChartRow[] => {
@@ -90,11 +92,6 @@ export const parseBlockingChartData = (pastedData: string): BlockingChartRow[] =
       
       // More flexible row detection - look for rows with potential campaign data
       const hasData = values.some(val => val && val.trim());
-      // Check for budget data in the row
-      // const hasBudgetData = values.some(val => {
-      //   const clean = val.replace(/[$,]/g, '');
-      //   return !isNaN(parseFloat(clean)) && parseFloat(clean) > 0;
-      // });
       
       if (hasData && values.length >= 3) {
         // Detect if this row is missing the channel column due to merged cells
@@ -215,18 +212,47 @@ export const parseBlockingChartData = (pastedData: string): BlockingChartRow[] =
           console.log(`\n=== ROW ${i} DETAILED PARSING ===`);
           console.log('Raw line:', line);
           console.log('Split values:', values.map((val, idx) => `${idx}: "${val}"`));
+          console.log('Column mapping:', columnMap);
+          
+          // Show all columns that might contain audience data
+          console.log('🔍 AUDIENCE COLUMN ANALYSIS:');
+          values.forEach((val, idx) => {
+            const cleanVal = cleanValue(val);
+            if (cleanVal.toLowerCase().includes('flavour') || cleanVal.toLowerCase().includes('seeker') || 
+                cleanVal.toLowerCase().includes('audience') || cleanVal.toLowerCase().includes('demo')) {
+              console.log(`  Column ${idx}: "${val}" -> "${cleanVal}" ⭐ POTENTIAL AUDIENCE DATA`);
+            } else if (/^\d+\.?\d*$/.test(cleanVal)) {
+              console.log(`  Column ${idx}: "${val}" -> "${cleanVal}" ⚠️  NUMERIC (likely CPM)`);
+            } else if (cleanVal.includes('$') || cleanVal.includes('CPM') || cleanVal.includes('CPP')) {
+              console.log(`  Column ${idx}: "${val}" -> "${cleanVal}" ⚠️  CPM/CPP DATA`);
+            } else {
+              console.log(`  Column ${idx}: "${val}" -> "${cleanVal}"`);
+            }
+          });
+          
           console.log('Extracted data:', {
             channel: `${channel} (${isMissingChannelColumn ? 'from current channel' : 'from column ' + columnMap.channel})`,
             tactic: `${tactic} (from column ${isMissingChannelColumn ? '0' : columnMap.tactic})`,
             platform: `${platform} (from column ${isMissingChannelColumn ? '1' : columnMap.platform})`,
             objective: `${objective} (from column ${isMissingChannelColumn ? '2' : columnMap.objective})`,
             placements: `${placements} (from column ${isMissingChannelColumn ? '3' : columnMap.placements})`,
+            demoTargeting: `${values[columnMap.demoTargeting] || 'NOT_FOUND'} (from column ${columnMap.demoTargeting})`,
+            cpmCpp: `${values[columnMap.cpmCpp] || 'NOT_FOUND'} (from column ${columnMap.cpmCpp})`,
             impressions: `${impressionsValue} (from column ${isMissingChannelColumn ? columnMap.impressionsGrps - 1 : columnMap.impressionsGrps})`,
             workingBudget: `${workingMediaBudget} (from budget detection)`,
             missingChannelColumn: isMissingChannelColumn
           });
           console.log('=================================\n');
           
+          // CORRECTED: Use the mapped audience column to get the audience data for this row
+          let demoTargetingValue = '';
+          if (columnMap.demoTargeting >= 0) {
+            demoTargetingValue = cleanValue(values[columnMap.demoTargeting] || '');
+            console.log(`Using audience column ${columnMap.demoTargeting}: "${demoTargetingValue}"`);
+          } else {
+            console.log(`❌ No audience column mapped`);
+          }
+
           const row: BlockingChartRow = {
             id: `row_${i}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             channel: cleanValue(channel),
@@ -236,7 +262,7 @@ export const parseBlockingChartData = (pastedData: string): BlockingChartRow[] =
             placements: cleanValue(placements),
             optimization: cleanValue(values[columnMap.optimization] || ''),
             kpi: cleanValue(values[columnMap.kpi] || ''),
-            demoTargeting: cleanValue(values[columnMap.demoTargeting] || ''),
+            demoTargeting: demoTargetingValue,
             cpmCpp: cleanValue(values[columnMap.cpmCpp] || ''),
             impressionsGrps: impressionsValue,
             mediaCost: cleanValue(values[columnMap.mediaCost] || ''),
@@ -303,25 +329,81 @@ const splitTabSeparatedLine = (line: string): string[] => {
 const getColumnMapping = (columns: string[]) => {
   const map: Record<string, number> = {};
   
+  console.log('=== COLUMN MAPPING DEBUG ===');
+  console.log('Available columns:', columns.map((col, idx) => `${idx}: "${col}"`));
+  
   columns.forEach((col, index) => {
     const lowerCol = col.toLowerCase().trim();
     
-    if (lowerCol.includes('channel')) map.channel = index;
-    else if (lowerCol.includes('tactic')) map.tactic = index;
-    else if (lowerCol.includes('platform')) map.platform = index;
-    else if (lowerCol.includes('objective')) map.objective = index;
-    else if (lowerCol.includes('placement')) map.placements = index;
-    else if (lowerCol.includes('optimization')) map.optimization = index;
-    else if (lowerCol.includes('kpi')) map.kpi = index;
-    else if (lowerCol.includes('demo') || lowerCol.includes('targeting')) map.demoTargeting = index;
-    else if (lowerCol.includes('cpm') || lowerCol.includes('cpp')) map.cpmCpp = index;
+    if (lowerCol.includes('channel')) {
+      map.channel = index;
+      console.log(`Found channel column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('tactic')) {
+      map.tactic = index;
+      console.log(`Found tactic column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('platform')) {
+      map.platform = index;
+      console.log(`Found platform column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('objective')) {
+      map.objective = index;
+      console.log(`Found objective column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('placement')) {
+      map.placements = index;
+      console.log(`Found placements column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('optimization')) {
+      map.optimization = index;
+      console.log(`Found optimization column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('kpi')) {
+      map.kpi = index;
+      console.log(`Found kpi column: ${index} - "${col}"`);
+    }
+    // Prioritize "Audience" column specifically, then fall back to other audience-related terms
+    else if (lowerCol === 'audience' || lowerCol === 'audiences') {
+      map.demoTargeting = index;
+      console.log(`Found Audience column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('audience') && !lowerCol.includes('cpm') && !lowerCol.includes('cpp')) {
+      map.demoTargeting = index;
+      console.log(`Found audience-related column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('demo') || lowerCol.includes('targeting') || 
+             lowerCol.includes('segment') || lowerCol.includes('persona') || lowerCol.includes('demographic') ||
+             lowerCol.includes('flavour') || lowerCol.includes('seeker')) {
+      map.demoTargeting = index;
+      console.log(`Found demoTargeting column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('cpm') || lowerCol.includes('cpp') || lowerCol.includes('cost per')) {
+      map.cpmCpp = index;
+      console.log(`Found cpmCpp column: ${index} - "${col}"`);
+    }
     else if (lowerCol.includes('impression') || lowerCol.includes('grp') || 
              lowerCol === 'impressions/grps' || lowerCol === 'impressions' || 
-             lowerCol.includes('impressions/grps') || lowerCol.includes('impressions')) map.impressionsGrps = index;
-    else if (lowerCol.includes('media cost') && !lowerCol.includes('working')) map.mediaCost = index;
-    else if (lowerCol.includes('ad serving')) map.adServing = index;
-    else if (lowerCol.includes('dv cost')) map.dvCost = index;
-    else if (lowerCol.includes('media fee')) map.mediaFee = index;
+             lowerCol.includes('impressions/grps') || lowerCol.includes('impressions')) {
+      map.impressionsGrps = index;
+      console.log(`Found impressions column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('media cost') && !lowerCol.includes('working')) {
+      map.mediaCost = index;
+      console.log(`Found mediaCost column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('ad serving')) {
+      map.adServing = index;
+      console.log(`Found adServing column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('dv cost')) {
+      map.dvCost = index;
+      console.log(`Found dvCost column: ${index} - "${col}"`);
+    }
+    else if (lowerCol.includes('media fee')) {
+      map.mediaFee = index;
+      console.log(`Found mediaFee column: ${index} - "${col}"`);
+    }
     // Be very specific about Working Media Budget column - try multiple variations
     else if (lowerCol === 'total working media budget' || 
              lowerCol === 'working media budget' ||
@@ -334,16 +416,21 @@ const getColumnMapping = (columns: string[]) => {
              (lowerCol.includes('working') && lowerCol.includes('budget')) ||
              (lowerCol.includes('total') && lowerCol.includes('working') && lowerCol.includes('media'))) {
       map.totalWorkingMediaBudget = index;
+      console.log(`Found totalWorkingMediaBudget column: ${index} - "${col}"`);
     }
     // Also check for rightmost budget column as backup
     else if (lowerCol.endsWith('budget') && !lowerCol.includes('impression') && !lowerCol.includes('grp')) {
       if (map.totalWorkingMediaBudget === undefined) {
         map.totalWorkingMediaBudget = index;
+        console.log(`Found backup budget column: ${index} - "${col}"`);
       }
     }
   });
   
-  // Set defaults if not found
+  console.log('Final column mapping:', map);
+  console.log('=== END COLUMN MAPPING DEBUG ===');
+  
+  // Set defaults if not found - be more careful about demoTargeting
   return {
     channel: map.channel || 0,
     tactic: map.tactic || 1,
@@ -352,7 +439,7 @@ const getColumnMapping = (columns: string[]) => {
     placements: map.placements || 4,
     optimization: map.optimization || 5,
     kpi: map.kpi || 6,
-    demoTargeting: map.demoTargeting || 7,
+    demoTargeting: map.demoTargeting || -1, // Don't default to column 7 - use -1 to indicate not found
     cpmCpp: map.cpmCpp || 8,
     impressionsGrps: map.impressionsGrps || 9,
     mediaCost: map.mediaCost || -1,

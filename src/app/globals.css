@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Darker placeholder text for better readability */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important; /* text-gray-500 - darker than default */
+  opacity: 1;
+}
+
+/* Darker text input for better readability in campaign structure builder */
+input[type="text"],
+input[type="number"],
+textarea {
+  color: #1f2937 !important; /* text-gray-800 - much darker than default */
+  font-weight: 500;
+}

@@ -32,6 +32,8 @@ export interface CampaignShell {
   workingMediaBudget: string;
   category: 'brand_say_digital' | 'brand_say_social' | 'other_say_social' | 'uncategorized';
   targetingLayers: TargetingLayer[];
+  startDate?: string;
+  endDate?: string;
 }
 
 // Legacy types for backward compatibility

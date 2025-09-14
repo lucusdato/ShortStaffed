@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, ChevronDown, ChevronRight, Link as LinkIcon, Youtube, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, Copy, Trash2, ChevronDown, ChevronRight, Link as LinkIcon, Youtube, Target } from 'lucide-react';
 import { CampaignShell, TargetingLayer, CreativeShell } from '@/types';
 import { 
   createTargetingLayer, 
@@ -11,42 +11,19 @@ import {
   generateUTMUrl,
   saveCampaignShell
 } from '@/utils/campaignStructure';
-import { 
-  exportCampaignShellsToExcel, 
-  exportCampaignShellsToCSV, 
-  downloadFile 
-} from '@/utils/exportHelpers';
 
 interface CampaignStructureBuilderProps {
   campaignShells: CampaignShell[];
   onUpdate: (shells: CampaignShell[]) => void;
+  onGenerateTaxonomy?: () => void;
 }
 
-export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignStructureBuilderProps) {
+export function CampaignStructureBuilder({ campaignShells, onUpdate, onGenerateTaxonomy }: CampaignStructureBuilderProps) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [expandedTargeting, setExpandedTargeting] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleExportExcel = () => {
-    try {
-      const excelData = exportCampaignShellsToExcel(campaignShells);
-      const timestamp = new Date().toISOString().split('T')[0];
-      downloadFile(excelData, `shortstaffed-campaigns-${timestamp}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      alert('Error exporting to Excel. Please try again.');
-    }
-  };
 
-  const handleExportCSV = () => {
-    try {
-      const csvData = exportCampaignShellsToCSV(campaignShells);
-      const timestamp = new Date().toISOString().split('T')[0];
-      downloadFile(csvData, `shortstaffed-campaigns-${timestamp}.csv`, 'text/csv');
-    } catch (error) {
-      console.error('Error exporting to CSV:', error);
-      alert('Error exporting to CSV. Please try again.');
-    }
-  };
 
   const toggleCampaignExpansion = (campaignId: string) => {
     const newExpanded = new Set(expandedCampaigns);
@@ -186,7 +163,7 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
       <div className="bg-white rounded-lg shadow-sm border p-8">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Campaign Structure Builder</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Traffic Sheet Creator</h2>
             <p className="text-gray-600 mt-1">
               Build out your targeting layers and creative shells for each imported campaign.
             </p>
@@ -194,20 +171,12 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
           {campaignShells.length > 0 && (
             <div className="flex space-x-3">
               <button
-                onClick={handleExportExcel}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                title="Export to Excel"
+                onClick={onGenerateTaxonomy}
+                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                title="Generate Accutics taxonomy names"
               >
-                <FileSpreadsheet className="w-5 h-5 mr-2" />
-                Export Excel
-              </button>
-              <button
-                onClick={handleExportCSV}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                title="Export to CSV"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Export CSV
+                <Target className="w-5 h-5 mr-2" />
+                Generate Taxonomy
               </button>
             </div>
           )}
@@ -222,40 +191,48 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
             {campaignShells.map((campaign) => (
               <div key={campaign.id} className="border rounded-lg bg-gray-50">
                 {/* Campaign Header */}
-                <div className="p-6 border-b bg-white rounded-t-lg">
+                <div className="p-4 border-b bg-white rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       <button
                         onClick={() => toggleCampaignExpansion(campaign.id)}
                         className="p-1 hover:bg-gray-100 rounded"
                       >
                         {expandedCampaigns.has(campaign.id) ? (
-                          <ChevronDown className="w-5 h-5" />
+                          <ChevronDown className="w-5 h-5 text-gray-700" />
                         ) : (
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className="w-5 h-5 text-gray-700" />
                         )}
                       </button>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900">{campaign.name}</h3>
-                        <div className="text-sm text-gray-600 mb-1">
+                        <div className="text-sm text-gray-600 mb-2">
                           {campaign.platform} • {campaign.objective} • ${campaign.workingMediaBudget}
                         </div>
-                        <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-4">
                           <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Accutics Campaign Name</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
                             <input
-                              type="text"
-                              value={campaign.accuticsCampaignName}
-                              onChange={(e) => updateCampaignShell(campaign.id, { accuticsCampaignName: e.target.value })}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                              placeholder="Accutics campaign name"
+                              type="date"
+                              value={campaign.startDate || ''}
+                              onChange={(e) => updateCampaignShell(campaign.id, { startDate: e.target.value })}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+                            <input
+                              type="date"
+                              value={campaign.endDate || ''}
+                              onChange={(e) => updateCampaignShell(campaign.id, { endDate: e.target.value })}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      <span className={`px-3 py-2 text-sm font-semibold rounded-full ${
                         campaign.category === 'brand_say_digital' ? 'bg-blue-100 text-blue-800' :
                         campaign.category === 'brand_say_social' ? 'bg-green-100 text-green-800' :
                         campaign.category === 'other_say_social' ? 'bg-purple-100 text-purple-800' :
@@ -268,9 +245,9 @@ export function CampaignStructureBuilder({ campaignShells, onUpdate }: CampaignS
                       </span>
                       <button
                         onClick={() => addTargetingLayer(campaign.id)}
-                        className="flex items-center px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded text-base font-medium hover:bg-blue-700"
                       >
-                        <Plus className="w-4 h-4 mr-1" />
+                        <Plus className="w-5 h-5 mr-2" />
                         Add Targeting
                       </button>
                     </div>
@@ -350,38 +327,28 @@ function TargetingLayerComponent({
   return (
     <div className="border rounded-lg bg-white">
       {/* Targeting Layer Header */}
-      <div className="p-4 border-b bg-blue-50">
+      <div className="p-3 border-b bg-blue-50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 flex-1">
+          <div className="flex items-center space-x-2 flex-1">
             <button
               onClick={onToggleExpansion}
               className="p-1 hover:bg-blue-100 rounded"
             >
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4 text-gray-700" />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-gray-700" />
               )}
             </button>
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Audience Name</label>
                 <input
                   type="text"
                   value={layer.audienceName}
                   onChange={(e) => onUpdate({ audienceName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., Adults 25-45"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Accutics Line Item</label>
-                <input
-                  type="text"
-                  value={layer.accuticsLineItem}
-                  onChange={(e) => onUpdate({ accuticsLineItem: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., ACC_001"
                 />
               </div>
             </div>
@@ -389,9 +356,9 @@ function TargetingLayerComponent({
           <div className="flex items-center space-x-2 ml-4">
             <button
               onClick={onAddCreative}
-              className="flex items-center px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+              className="flex items-center px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700"
             >
-              <Plus className="w-3 h-3 mr-1" />
+              <Plus className="w-4 h-4 mr-2" />
               Creative
             </button>
             <button
@@ -420,9 +387,9 @@ function TargetingLayerComponent({
               <p className="text-gray-500 text-sm mb-2">No creatives yet</p>
               <button
                 onClick={onAddCreative}
-                className="flex items-center mx-auto px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                className="flex items-center mx-auto px-4 py-2 bg-green-600 text-white rounded text-base font-medium hover:bg-green-700"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-5 h-5 mr-2" />
                 Add Creative
               </button>
             </div>
@@ -454,72 +421,72 @@ interface CreativeShellComponentProps {
 function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: CreativeShellComponentProps) {
 
   return (
-    <div className="border rounded bg-green-50 p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="border rounded bg-green-50 p-3">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Creative Name</label>
             <input
               type="text"
               value={creative.name}
               onChange={(e) => onUpdate({ name: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
               placeholder="Creative name"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Accutics Taxonomy Name</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Asset Link/YouTube URL</label>
+            <div className="flex">
+              <input
+                type="text"
+                value={creative.assetLink || creative.youtubeUrl || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Auto-detect if it's a YouTube URL or regular asset link
+                  if (value.includes('youtube.com') || value.includes('youtu.be')) {
+                    onUpdate({ youtubeUrl: value, assetLink: '' });
+                  } else {
+                    onUpdate({ assetLink: value, youtubeUrl: '' });
+                  }
+                }}
+                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-l focus:ring-2 focus:ring-green-500"
+                placeholder="https://... (Asset Link or YouTube URL)"
+              />
+              {(creative.assetLink || creative.youtubeUrl) && (
+                <a
+                  href={creative.assetLink || creative.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`px-2 py-1 border border-l-0 border-gray-300 rounded-r hover:opacity-80 ${
+                    (creative.youtubeUrl || '').includes('youtube') || (creative.youtubeUrl || '').includes('youtu.be')
+                      ? 'bg-red-200 hover:bg-red-300'
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                >
+                  {(creative.youtubeUrl || '').includes('youtube') || (creative.youtubeUrl || '').includes('youtu.be') ? (
+                    <Youtube className="w-4 h-4" />
+                  ) : (
+                    <LinkIcon className="w-4 h-4" />
+                  )}
+                </a>
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Landing Page</label>
             <input
               type="text"
-              value={creative.accuticsTaxonomyName || ''}
-              onChange={(e) => onUpdate({ accuticsTaxonomyName: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-              placeholder="Accutics taxonomy name"
+              value={creative.landingPage || ''}
+              onChange={(e) => {
+                console.log('Landing page changed:', e.target.value);
+                onUpdate({ landingPage: e.target.value });
+              }}
+              onFocus={() => console.log('Landing page focused')}
+              autoComplete="off"
+              spellCheck="false"
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+              placeholder="https://example.com"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Asset Link</label>
-            <div className="flex">
-              <input
-                type="text"
-                value={creative.assetLink || ''}
-                onChange={(e) => onUpdate({ assetLink: e.target.value })}
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-l focus:ring-2 focus:ring-green-500"
-                placeholder="https://..."
-              />
-              {creative.assetLink && (
-                <a
-                  href={creative.assetLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 bg-gray-200 border border-l-0 border-gray-300 rounded-r hover:bg-gray-300"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                </a>
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">YouTube URL</label>
-            <div className="flex">
-              <input
-                type="text"
-                value={creative.youtubeUrl || ''}
-                onChange={(e) => onUpdate({ youtubeUrl: e.target.value })}
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-l focus:ring-2 focus:ring-green-500"
-                placeholder="https://youtube.com/..."
-              />
-              {creative.youtubeUrl && (
-                <a
-                  href={creative.youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 bg-red-200 border border-l-0 border-gray-300 rounded-r hover:bg-red-300"
-                >
-                  <Youtube className="w-4 h-4" />
-                </a>
-              )}
-            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2 ml-4">
@@ -540,40 +507,6 @@ function CreativeShellComponent({ creative, onUpdate, onDuplicate, onDelete }: C
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Landing Page</label>
-          <input
-            type="text"
-            value={creative.landingPage || ''}
-            onChange={(e) => {
-              console.log('Landing page changed:', e.target.value);
-              onUpdate({ landingPage: e.target.value });
-            }}
-            onFocus={() => console.log('Landing page focused')}
-            autoComplete="off"
-            spellCheck="false"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-            placeholder="https://example.com"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Landing Page with UTM</label>
-          <input
-            type="text"
-            value={creative.landingPageWithUTM || ''}
-            onChange={(e) => {
-              console.log('Landing page with UTM changed:', e.target.value);
-              onUpdate({ landingPageWithUTM: e.target.value });
-            }}
-            onFocus={() => console.log('Landing page with UTM focused')}
-            autoComplete="off"
-            spellCheck="false"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-            placeholder="https://example.com?utm_parameters..."
-          />
-        </div>
-      </div>
 
     </div>
   );

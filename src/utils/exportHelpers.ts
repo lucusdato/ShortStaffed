@@ -102,6 +102,75 @@ export const exportToCSV = (campaigns: Campaign[]): string => {
   return csvRows.join('\n');
 };
 
+// Save/Load functionality for campaign structure builder
+export interface CampaignStructureSaveData {
+  version: string;
+  timestamp: string;
+  campaignShells: CampaignShell[];
+  metadata: {
+    totalCampaigns: number;
+    totalTargetingLayers: number;
+    totalCreatives: number;
+  };
+}
+
+export const saveCampaignStructure = (campaignShells: CampaignShell[]): void => {
+  const saveData: CampaignStructureSaveData = {
+    version: '1.0',
+    timestamp: new Date().toISOString(),
+    campaignShells,
+    metadata: {
+      totalCampaigns: campaignShells.length,
+      totalTargetingLayers: campaignShells.reduce((sum, shell) => sum + shell.targetingLayers.length, 0),
+      totalCreatives: campaignShells.reduce((sum, shell) => 
+        sum + shell.targetingLayers.reduce((layerSum, layer) => layerSum + layer.creatives.length, 0), 0)
+    }
+  };
+
+  const jsonString = JSON.stringify(saveData, null, 2);
+  const timestamp = new Date().toISOString().split('T')[0];
+  const filename = `shortstaffed-campaign-structure-${timestamp}.json`;
+  
+  downloadFile(jsonString, filename, 'application/json');
+};
+
+export const loadCampaignStructure = (file: File): Promise<CampaignShell[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      try {
+        const jsonString = event.target?.result as string;
+        const saveData: CampaignStructureSaveData = JSON.parse(jsonString);
+        
+        // Validate the save data structure
+        if (!saveData.version || !saveData.campaignShells || !Array.isArray(saveData.campaignShells)) {
+          throw new Error('Invalid save file format');
+        }
+        
+        // Validate each campaign shell has required properties
+        const validatedShells = saveData.campaignShells.filter(shell => 
+          shell.id && shell.name && shell.channel && shell.platform
+        );
+        
+        if (validatedShells.length === 0) {
+          throw new Error('No valid campaign data found in file');
+        }
+        
+        resolve(validatedShells);
+      } catch (error) {
+        reject(new Error(`Failed to load campaign structure: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      }
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
+    };
+    
+    reader.readAsText(file);
+  });
+};
+
 export const exportToExcel = (campaigns: Campaign[]): ArrayBuffer => {
   const data = generateExportData(campaigns);
   
@@ -469,3 +538,4 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
   
   return csvRows.join('\n');
 };
+
