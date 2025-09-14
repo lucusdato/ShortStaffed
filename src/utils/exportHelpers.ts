@@ -143,51 +143,104 @@ export const loadCampaignStructure = (file: File): Promise<CampaignShell[]> => {
         const jsonString = event.target?.result as string;
         const parsedData = JSON.parse(jsonString);
         
-        console.log('Loaded JSON data:', parsedData);
+        console.log('=== JSON FILE DEBUG INFO ===');
+        console.log('File name:', file.name);
+        console.log('File size:', file.size, 'bytes');
+        console.log('Parsed data type:', typeof parsedData);
+        console.log('Is array:', Array.isArray(parsedData));
+        console.log('Has version:', !!parsedData.version);
+        console.log('Has campaignShells:', !!parsedData.campaignShells);
+        console.log('Keys in object:', parsedData ? Object.keys(parsedData) : 'N/A');
+        console.log('Full parsed data:', parsedData);
+        console.log('============================');
+        
+        let campaignShells: unknown[] = [];
         
         // Check if it's the new format with version and campaignShells
         if (parsedData.version && parsedData.campaignShells && Array.isArray(parsedData.campaignShells)) {
-          const saveData = parsedData as CampaignStructureSaveData;
-          console.log('Detected new format, version:', saveData.version);
-          
-          // Validate each campaign shell has required properties
-          const validatedShells = saveData.campaignShells.filter(shell => 
-            shell.id && shell.name && shell.channel && shell.platform
-          );
-          
-          if (validatedShells.length === 0) {
-            throw new Error('No valid campaign data found in file');
-          }
-          
-          console.log(`Successfully loaded ${validatedShells.length} campaign shells`);
-          resolve(validatedShells);
+          console.log('✅ Detected new format, version:', parsedData.version);
+          campaignShells = parsedData.campaignShells;
         }
         // Check if it's an array of campaign shells directly (backward compatibility)
         else if (Array.isArray(parsedData)) {
-          console.log('Detected legacy format (array of campaign shells)');
-          
-          // Validate each campaign shell has required properties
-          const validatedShells = parsedData.filter(shell => 
-            shell.id && shell.name && shell.channel && shell.platform
-          );
-          
-          if (validatedShells.length === 0) {
-            throw new Error('No valid campaign data found in file');
-          }
-          
-          console.log(`Successfully loaded ${validatedShells.length} campaign shells from legacy format`);
-          resolve(validatedShells);
+          console.log('✅ Detected legacy format (array of campaign shells)');
+          campaignShells = parsedData;
         }
         // Check if it's a single campaign shell object (backward compatibility)
-        else if (parsedData.id && parsedData.name && parsedData.channel && parsedData.platform) {
-          console.log('Detected single campaign shell format');
-          resolve([parsedData]);
+        else if (parsedData && typeof parsedData === 'object' && parsedData.id && parsedData.name) {
+          console.log('✅ Detected single campaign shell format');
+          campaignShells = [parsedData];
         }
-        else {
-          throw new Error('Invalid save file format. Expected a campaign structure file with version and campaignShells, or an array of campaign data.');
+        // Try to find campaign data in any nested structure
+        else if (parsedData && typeof parsedData === 'object') {
+          console.log('🔍 Searching for campaign data in nested structure...');
+          
+          // Look for common property names that might contain campaign data
+          const possibleKeys = ['campaigns', 'campaignShells', 'data', 'campaigns', 'shells'];
+          for (const key of possibleKeys) {
+            if (parsedData[key] && Array.isArray(parsedData[key])) {
+              console.log(`✅ Found campaign data in '${key}' property`);
+              campaignShells = parsedData[key];
+              break;
+            }
+          }
+          
+          // If still not found, try to find any array in the object
+          if (campaignShells.length === 0) {
+            for (const [key, value] of Object.entries(parsedData)) {
+              if (Array.isArray(value) && value.length > 0) {
+                console.log(`🔍 Found array in '${key}' property, checking if it contains campaign data...`);
+                // Check if the first item looks like a campaign
+                if (value[0] && typeof value[0] === 'object' && value[0].id && value[0].name) {
+                  console.log(`✅ Array in '${key}' appears to contain campaign data`);
+                  campaignShells = value;
+                  break;
+                }
+              }
+            }
+          }
         }
+        
+        if (campaignShells.length === 0) {
+          console.error('❌ No campaign data found in any expected format');
+          throw new Error('No campaign data found in file. Please ensure this is a valid ShortStaffed save file.');
+        }
+        
+        console.log(`📊 Found ${campaignShells.length} potential campaign items`);
+        
+        // Validate each campaign shell has required properties
+        const validatedShells = campaignShells.filter((shell, index) => {
+          const shellObj = shell as Record<string, unknown>;
+          const isValid = shell && 
+                         typeof shell === 'object' && 
+                         shell !== null &&
+                         'id' in shell && 
+                         'name' in shell && 
+                         'channel' in shell && 
+                         'platform' in shell &&
+                         shellObj.id && 
+                         shellObj.name && 
+                         shellObj.channel && 
+                         shellObj.platform;
+          
+          if (!isValid) {
+            console.warn(`❌ Invalid campaign at index ${index}:`, shell);
+          }
+          
+          return isValid;
+        });
+        
+        console.log(`✅ Validated ${validatedShells.length} out of ${campaignShells.length} campaign shells`);
+        
+        if (validatedShells.length === 0) {
+          throw new Error('No valid campaign data found in file. Campaigns must have id, name, channel, and platform properties.');
+        }
+        
+        console.log(`🎉 Successfully loaded ${validatedShells.length} campaign shells`);
+        resolve(validatedShells as CampaignShell[]);
+        
       } catch (error) {
-        console.error('Error parsing JSON:', error);
+        console.error('❌ Error parsing JSON:', error);
         if (error instanceof SyntaxError) {
           reject(new Error('Invalid JSON file format. Please ensure the file is a valid JSON file.'));
         } else {
