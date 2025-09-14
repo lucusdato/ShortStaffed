@@ -13,7 +13,7 @@ import { loadCampaignStructure } from '@/utils/exportHelpers';
 import { CampaignShell } from '@/types';
 
 export default function Home() {
-  const { campaigns, loading: campaignsLoading } = useCampaigns();
+  const { campaigns } = useCampaigns();
   const [campaignShells, setCampaignShells] = useState<CampaignShell[]>([]);
   const [showStructureBuilder, setShowStructureBuilder] = useState(false);
   const [showImport, setShowImport] = useState(false);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Upload, AlertCircle, CheckCircle, Eye, Download, FileSpreadsheet, FileText, X, Calendar } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { BlockingChartRow } from '@/utils/blockingChartParser';
 import * as XLSX from 'xlsx';
 
@@ -25,8 +25,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
   const [dragActive, setDragActive] = useState(false);
   const [availableSheets, setAvailableSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
-  const [showSheetSelector, setShowSheetSelector] = useState(false);
-  const [manualFlighting, setManualFlighting] = useState<Record<string, any>>({});
+  const [manualFlighting, setManualFlighting] = useState<Record<string, {start: string, end: string}>>({});
   const [copiedFlighting, setCopiedFlighting] = useState<{start: string, end: string} | null>(null);
 
   const findBestSheet = (workbook: XLSX.WorkBook): string => {
@@ -113,7 +112,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
           let maxHeaderCount = 0;
           
           for (let i = 0; i < Math.min(10, jsonData.length); i++) {
-            const row = jsonData[i] as any[];
+            const row = jsonData[i] as unknown[];
             if (row) {
               const nonEmptyCells = row.filter(cell => cell && String(cell).trim());
               const headerLikeCells = nonEmptyCells.filter(cell => {
@@ -147,14 +146,14 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
           
           console.log('Using header row index:', headerRowIndex);
           
-          const headers = (jsonData[headerRowIndex] as any[]).map(h => {
+          const headers = (jsonData[headerRowIndex] as unknown[]).map(h => {
             const val = h ? String(h).trim() : '';
             console.log('Header value:', h, '-> processed:', val);
             return val;
           });
           
           const rows = jsonData.slice(headerRowIndex + 1).map(row => 
-            (row as any[]).map(cell => String(cell || '').trim())
+            (row as unknown[]).map(cell => String(cell || '').trim())
           );
 
           console.log('Final headers:', headers);
@@ -263,7 +262,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [selectedSheet]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -294,7 +293,6 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
 
   const handleSheetSelect = (sheetName: string) => {
     setSelectedSheet(sheetName);
-    setShowSheetSelector(false);
     // Re-parse the file with the selected sheet
     if (parsedData) {
       handleFileUpload(new File([], parsedData.fileName));
@@ -518,147 +516,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
     return convertedRows;
   };
 
-  const extractFlightingData = (headers: string[], rows: string[][]): Record<string, any> => {
-    const flightingMap: Record<string, any> = {};
-    const monthColumns: Record<string, number> = {};
-    
-    // Find month columns
-    headers.forEach((header, index) => {
-      const lowerHeader = header.toLowerCase().trim();
-      if (lowerHeader.includes('january') || lowerHeader === 'jan') monthColumns.january = index;
-      else if (lowerHeader.includes('february') || lowerHeader === 'feb') monthColumns.february = index;
-      else if (lowerHeader.includes('march') || lowerHeader === 'mar') monthColumns.march = index;
-      else if (lowerHeader.includes('april') || lowerHeader === 'apr') monthColumns.april = index;
-      else if (lowerHeader.includes('may')) monthColumns.may = index;
-      else if (lowerHeader.includes('june') || lowerHeader === 'jun') monthColumns.june = index;
-      else if (lowerHeader.includes('july') || lowerHeader === 'jul') monthColumns.july = index;
-      else if (lowerHeader.includes('august') || lowerHeader === 'aug') monthColumns.august = index;
-      else if (lowerHeader.includes('september') || lowerHeader === 'sep' || lowerHeader === 'sept') monthColumns.september = index;
-      else if (lowerHeader.includes('october') || lowerHeader === 'oct') monthColumns.october = index;
-      else if (lowerHeader.includes('november') || lowerHeader === 'nov') monthColumns.november = index;
-      else if (lowerHeader.includes('december') || lowerHeader === 'dec') monthColumns.december = index;
-    });
-    
-    console.log('Found month columns:', monthColumns);
-    
-    // Extract flighting data for each campaign row
-    rows.forEach((row, rowIndex) => {
-      if (!row || !row.some(cell => cell && cell.trim())) return;
-      
-      const line = row.join('\t');
-      const lineLower = line.toLowerCase();
-      
-      // Skip if this is a header, separator, or summary row
-      if (lineLower.includes('total') || lineLower.includes('subtotal') || 
-          lineLower.includes('grand total') || lineLower.match(/^\s*\d+\s*$/) ||
-          lineLower.includes('digital video') && !lineLower.includes('trade desk') ||
-          lineLower.includes('digital display') && !lineLower.includes('trade desk') ||
-          lineLower.includes('paid social') && !lineLower.includes('meta') && !lineLower.includes('tiktok') ||
-          lineLower.match(/^\s*(digital|paid|social|video|display)\s*$/) ||
-          lineLower.includes('variance') || lineLower.includes('rates') || lineLower.includes('adserving') ||
-          lineLower.includes('channels') && lineLower.includes('rates') ||
-          lineLower.includes('pre-bid') || lineLower.includes('y/n') ||
-          lineLower.includes('youtube') && lineLower.includes('cpm') ||
-          lineLower.includes('meta') && lineLower.includes('cpm') && !lineLower.includes('video') && !lineLower.includes('traffic') ||
-          lineLower.includes('tiktok') && lineLower.includes('no associated') ||
-          lineLower.includes('ttd') && lineLower.includes('cpm') ||
-          lineLower.includes('amz') && lineLower.includes('cpm')) {
-        return;
-      }
-      
-      // Extract flighting data for this row
-      const rowFlighting: Record<string, any> = {};
-      
-      Object.entries(monthColumns).forEach(([month, columnIndex]) => {
-        const cellValue = row[columnIndex]?.trim() || '';
-        if (cellValue) {
-          // Parse different flighting formats
-          const parsedFlighting = parseFlightingValue(cellValue, month);
-          if (parsedFlighting) {
-            rowFlighting[month] = parsedFlighting;
-          }
-        }
-      });
-      
-      // Only store if we found flighting data
-      if (Object.keys(rowFlighting).length > 0) {
-        flightingMap[`row_${rowIndex}`] = {
-          rowIndex,
-          rawData: row.slice(0, 5).join(' | '), // Channel, Tactic, Platform, Objective, Placements
-          flighting: rowFlighting
-        };
-      }
-    });
-    
-    return flightingMap;
-  };
 
-  const parseFlightingValue = (value: string, month: string): any => {
-    const cleanValue = value.trim();
-    
-    // Handle different flighting formats
-    if (cleanValue.match(/^\d+$/)) {
-      // Simple number (week number or flight week)
-      return {
-        type: 'week',
-        value: parseInt(cleanValue),
-        display: `Week ${cleanValue}`,
-        raw: cleanValue
-      };
-    }
-    
-    if (cleanValue.match(/^\d{1,2}\/\d{1,2}$/)) {
-      // Date format (MM/DD)
-      return {
-        type: 'date',
-        value: cleanValue,
-        display: `${month} ${cleanValue}`,
-        raw: cleanValue
-      };
-    }
-    
-    if (cleanValue.match(/^\d{1,2}-\d{1,2}$/)) {
-      // Date range (MM-DD)
-      return {
-        type: 'date_range',
-        value: cleanValue,
-        display: `${month} ${cleanValue}`,
-        raw: cleanValue
-      };
-    }
-    
-    if (cleanValue.match(/^[wW]\d+$/)) {
-      // Week format (W1, W2, etc.)
-      return {
-        type: 'week',
-        value: parseInt(cleanValue.substring(1)),
-        display: cleanValue.toUpperCase(),
-        raw: cleanValue
-      };
-    }
-    
-    if (cleanValue.match(/^[xX✓●■]$/)) {
-      // Visual indicators
-      return {
-        type: 'indicator',
-        value: cleanValue,
-        display: `${month} (Active)`,
-        raw: cleanValue
-      };
-    }
-    
-    if (cleanValue.length > 0) {
-      // Any other non-empty value
-      return {
-        type: 'text',
-        value: cleanValue,
-        display: `${month}: ${cleanValue}`,
-        raw: cleanValue
-      };
-    }
-    
-    return null;
-  };
 
   const createColumnMapping = (headers: string[]): Record<string, number> => {
     const map: Record<string, number> = {};
@@ -847,8 +705,8 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
     // Update selected rows with manual flighting data
     const updatedRows = selectedRows.map(row => ({
       ...row,
-      startDate: manualFlighting[`${row.id}_start`] || row.startDate || '',
-      endDate: manualFlighting[`${row.id}_end`] || row.endDate || '',
+      startDate: manualFlighting[`${row.id}_start`]?.start || row.startDate || '',
+      endDate: manualFlighting[`${row.id}_end`]?.end || row.endDate || '',
     }));
     
     onImportComplete(updatedRows);
@@ -859,7 +717,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
     const endDate = manualFlighting[`${rowId}_end`];
     
     if (startDate && endDate) {
-      setCopiedFlighting({ start: startDate, end: endDate });
+      setCopiedFlighting({ start: startDate.start, end: endDate.end });
     }
   };
 
@@ -867,25 +725,12 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
     if (copiedFlighting) {
       setManualFlighting(prev => ({
         ...prev,
-        [`${rowId}_start`]: copiedFlighting.start,
-        [`${rowId}_end`]: copiedFlighting.end
+        [`${rowId}_start`]: { start: copiedFlighting.start, end: copiedFlighting.start },
+        [`${rowId}_end`]: { start: copiedFlighting.end, end: copiedFlighting.end }
       }));
     }
   };
 
-  const pasteToAllSelected = () => {
-    if (copiedFlighting) {
-      const selectedRows = parsedRows.filter(row => row.selected);
-      const updates: Record<string, any> = {};
-      
-      selectedRows.forEach(row => {
-        updates[`${row.id}_start`] = copiedFlighting.start;
-        updates[`${row.id}_end`] = copiedFlighting.end;
-      });
-      
-      setManualFlighting(prev => ({ ...prev, ...updates }));
-    }
-  };
 
   const selectedCount = parsedRows.filter(row => row.selected).length;
 
@@ -1022,7 +867,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {parsedRows.map((row, index) => {
+                {parsedRows.map((row) => {
                   
                   return (
                     <tr key={row.id} className={`${row.selected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
@@ -1073,11 +918,11 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="date"
-                          value={manualFlighting[`${row.id}_start`] || ''}
+                          value={manualFlighting[`${row.id}_start`]?.start || ''}
                           onChange={(e) => {
                             setManualFlighting(prev => ({
                               ...prev,
-                              [`${row.id}_start`]: e.target.value
+                              [`${row.id}_start`]: { start: e.target.value, end: e.target.value }
                             }));
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1088,11 +933,11 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
                         <div className="flex items-center space-x-2">
                           <input
                             type="date"
-                            value={manualFlighting[`${row.id}_end`] || ''}
+                            value={manualFlighting[`${row.id}_end`]?.end || ''}
                             onChange={(e) => {
                               setManualFlighting(prev => ({
                                 ...prev,
-                                [`${row.id}_end`]: e.target.value
+                                [`${row.id}_end`]: { start: e.target.value, end: e.target.value }
                               }));
                             }}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1233,7 +1078,7 @@ export function FileBasedBlockingChartImport({ onImportComplete }: FileBasedBloc
                   <strong>Selected:</strong> {selectedSheet}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
-                  Click "Choose File" again to re-parse with this sheet
+                  Click &quot;Choose File&quot; again to re-parse with this sheet
                 </p>
               </div>
             )}

@@ -21,7 +21,6 @@ interface CampaignStructureBuilderProps {
 export function CampaignStructureBuilder({ campaignShells, onUpdate, onGenerateTaxonomy }: CampaignStructureBuilderProps) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [expandedTargeting, setExpandedTargeting] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(false);
 
 
 

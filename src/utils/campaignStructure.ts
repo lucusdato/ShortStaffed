@@ -6,7 +6,7 @@ export const convertBlockingChartToCampaignShells = (rows: BlockingChartRow[]): 
   return rows.map(row => ({
     id: uuidv4(),
     name: generateCampaignShellName(row),
-    accuticsCampaignName: generateAccuticsCampaignName(row),
+    accuticsCampaignName: generateAccuticsCampaignName(),
     channel: row.channel,
     platform: row.platform,
     objective: row.objective,
@@ -38,7 +38,7 @@ const generateCampaignShellName = (row: BlockingChartRow): string => {
   }
 };
 
-const generateAccuticsCampaignName = (row: BlockingChartRow): string => {
+const generateAccuticsCampaignName = (): string => {
   // Return empty string for user input in Taxonomy Generator
   return '';
 };
