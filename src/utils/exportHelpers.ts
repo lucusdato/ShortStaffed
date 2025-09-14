@@ -261,6 +261,8 @@ export interface CampaignShellExportRow {
   assetLinkYoutubeUrl: string;
   landingPage: string;
   landingPageWithUTM: string;
+  startDate: string;
+  endDate: string;
 }
 
 export const generateCampaignShellExportData = (campaignShells: CampaignShell[]): CampaignShellExportRow[] => {
@@ -286,6 +288,8 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
         assetLinkYoutubeUrl: '',
         landingPage: '',
         landingPageWithUTM: '',
+        startDate: shell.startDate || '',
+        endDate: shell.endDate || '',
       });
     } else {
       shell.targetingLayers.forEach(layer => {
@@ -308,6 +312,8 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
             assetLinkYoutubeUrl: '',
             landingPage: '',
             landingPageWithUTM: '',
+            startDate: shell.startDate || '',
+            endDate: shell.endDate || '',
           });
         } else {
           layer.creatives.forEach(creative => {
@@ -333,6 +339,8 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
               assetLinkYoutubeUrl: assetLinkYoutubeUrl,
               landingPage: creative.landingPage,
               landingPageWithUTM: creative.landingPageWithUTM,
+              startDate: shell.startDate || '',
+              endDate: shell.endDate || '',
             });
           });
         }
@@ -368,6 +376,8 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
       'assetLinkYoutubeUrl',
       'landingPage',
       'landingPageWithUTM',
+      'startDate',
+      'endDate',
     ],
   });
   
@@ -389,6 +399,8 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     'Asset Link/YouTube URL',
     'Landing Page',
     'Landing Page with UTM',
+    'Start Date',
+    'End Date',
   ];
   
   XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
@@ -411,6 +423,8 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     { wch: 40 }, // Asset Link/YouTube URL
     { wch: 30 }, // Landing Page
     { wch: 35 }, // Landing Page with UTM
+    { wch: 12 }, // Start Date
+    { wch: 12 }, // End Date
   ];
   
   worksheet['!cols'] = columnWidths;
@@ -479,6 +493,8 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
     'Asset Link/YouTube URL',
     'Landing Page',
     'Landing Page with UTM',
+    'Start Date',
+    'End Date',
   ];
   
   const csvRows = [headers.join(',')];
@@ -501,6 +517,8 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
       escapeCSVField(row.assetLinkYoutubeUrl),
       escapeCSVField(row.landingPage),
       escapeCSVField(row.landingPageWithUTM),
+      escapeCSVField(row.startDate),
+      escapeCSVField(row.endDate),
     ];
     csvRows.push(values.join(','));
   });
