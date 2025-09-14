@@ -141,30 +141,63 @@ export const loadCampaignStructure = (file: File): Promise<CampaignShell[]> => {
     reader.onload = (event) => {
       try {
         const jsonString = event.target?.result as string;
-        const saveData: CampaignStructureSaveData = JSON.parse(jsonString);
+        const parsedData = JSON.parse(jsonString);
         
-        // Validate the save data structure
-        if (!saveData.version || !saveData.campaignShells || !Array.isArray(saveData.campaignShells)) {
-          throw new Error('Invalid save file format');
+        console.log('Loaded JSON data:', parsedData);
+        
+        // Check if it's the new format with version and campaignShells
+        if (parsedData.version && parsedData.campaignShells && Array.isArray(parsedData.campaignShells)) {
+          const saveData = parsedData as CampaignStructureSaveData;
+          console.log('Detected new format, version:', saveData.version);
+          
+          // Validate each campaign shell has required properties
+          const validatedShells = saveData.campaignShells.filter(shell => 
+            shell.id && shell.name && shell.channel && shell.platform
+          );
+          
+          if (validatedShells.length === 0) {
+            throw new Error('No valid campaign data found in file');
+          }
+          
+          console.log(`Successfully loaded ${validatedShells.length} campaign shells`);
+          resolve(validatedShells);
         }
-        
-        // Validate each campaign shell has required properties
-        const validatedShells = saveData.campaignShells.filter(shell => 
-          shell.id && shell.name && shell.channel && shell.platform
-        );
-        
-        if (validatedShells.length === 0) {
-          throw new Error('No valid campaign data found in file');
+        // Check if it's an array of campaign shells directly (backward compatibility)
+        else if (Array.isArray(parsedData)) {
+          console.log('Detected legacy format (array of campaign shells)');
+          
+          // Validate each campaign shell has required properties
+          const validatedShells = parsedData.filter(shell => 
+            shell.id && shell.name && shell.channel && shell.platform
+          );
+          
+          if (validatedShells.length === 0) {
+            throw new Error('No valid campaign data found in file');
+          }
+          
+          console.log(`Successfully loaded ${validatedShells.length} campaign shells from legacy format`);
+          resolve(validatedShells);
         }
-        
-        resolve(validatedShells);
+        // Check if it's a single campaign shell object (backward compatibility)
+        else if (parsedData.id && parsedData.name && parsedData.channel && parsedData.platform) {
+          console.log('Detected single campaign shell format');
+          resolve([parsedData]);
+        }
+        else {
+          throw new Error('Invalid save file format. Expected a campaign structure file with version and campaignShells, or an array of campaign data.');
+        }
       } catch (error) {
-        reject(new Error(`Failed to load campaign structure: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        console.error('Error parsing JSON:', error);
+        if (error instanceof SyntaxError) {
+          reject(new Error('Invalid JSON file format. Please ensure the file is a valid JSON file.'));
+        } else {
+          reject(new Error(`Failed to load campaign structure: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        }
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Failed to read file'));
+      reject(new Error('Failed to read file. Please ensure the file is not corrupted.'));
     };
     
     reader.readAsText(file);
