@@ -254,17 +254,13 @@ export interface CampaignShellExportRow {
   impressions: string;
   workingMediaBudget: string;
   category: string;
-  targetingLayerId: string;
   audienceName: string;
   accuticsLineItem: string;
-  creativeId: string;
   creativeName: string;
   accuticsTaxonomyName: string;
-  assetLink: string;
-  youtubeUrl: string;
+  assetLinkYoutubeUrl: string;
   landingPage: string;
   landingPageWithUTM: string;
-  utmTerm: string;
 }
 
 export const generateCampaignShellExportData = (campaignShells: CampaignShell[]): CampaignShellExportRow[] => {
@@ -283,17 +279,13 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
         impressions: shell.impressions,
         workingMediaBudget: shell.workingMediaBudget,
         category: shell.category,
-        targetingLayerId: '',
         audienceName: '',
         accuticsLineItem: '',
-        creativeId: '',
         creativeName: '',
         accuticsTaxonomyName: '',
-        assetLink: '',
-        youtubeUrl: '',
+        assetLinkYoutubeUrl: '',
         landingPage: '',
         landingPageWithUTM: '',
-        utmTerm: '',
       });
     } else {
       shell.targetingLayers.forEach(layer => {
@@ -309,20 +301,21 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
             impressions: shell.impressions,
             workingMediaBudget: shell.workingMediaBudget,
             category: shell.category,
-            targetingLayerId: layer.id,
             audienceName: layer.audienceName,
             accuticsLineItem: layer.accuticsLineItem,
-            creativeId: '',
             creativeName: '',
             accuticsTaxonomyName: '',
-            assetLink: '',
-            youtubeUrl: '',
+            assetLinkYoutubeUrl: '',
             landingPage: '',
             landingPageWithUTM: '',
-            utmTerm: '',
           });
         } else {
           layer.creatives.forEach(creative => {
+            // Combine assetLink and youtubeUrl into one field
+            const assetLinkYoutubeUrl = [creative.assetLink, creative.youtubeUrl]
+              .filter(link => link && link.trim())
+              .join(' | ');
+
             rows.push({
               campaignName: shell.name,
               accuticsCampaignName: shell.accuticsCampaignName,
@@ -333,17 +326,13 @@ export const generateCampaignShellExportData = (campaignShells: CampaignShell[])
               impressions: shell.impressions,
               workingMediaBudget: shell.workingMediaBudget,
               category: shell.category,
-              targetingLayerId: layer.id,
               audienceName: layer.audienceName,
               accuticsLineItem: layer.accuticsLineItem,
-              creativeId: creative.id,
               creativeName: creative.name,
               accuticsTaxonomyName: creative.accuticsTaxonomyName || '',
-              assetLink: creative.assetLink || '',
-              youtubeUrl: creative.youtubeUrl || '',
+              assetLinkYoutubeUrl: assetLinkYoutubeUrl,
               landingPage: creative.landingPage,
               landingPageWithUTM: creative.landingPageWithUTM,
-              utmTerm: creative.utmParameters.term || '',
             });
           });
         }
@@ -372,17 +361,13 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
       'impressions',
       'workingMediaBudget',
       'category',
-      'targetingLayerId',
       'audienceName',
       'accuticsLineItem',
-      'creativeId',
       'creativeName',
       'accuticsTaxonomyName',
-      'assetLink',
-      'youtubeUrl',
+      'assetLinkYoutubeUrl',
       'landingPage',
       'landingPageWithUTM',
-      'utmTerm',
     ],
   });
   
@@ -397,17 +382,13 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     'Impressions',
     'Working Media Budget',
     'Category',
-    'Targeting Layer ID',
     'Audience Name',
     'Accutics Line Item',
-    'Creative ID',
     'Creative Name',
     'Accutics Taxonomy Name',
-    'Asset Link',
-    'YouTube URL',
+    'Asset Link/YouTube URL',
     'Landing Page',
     'Landing Page with UTM',
-    'UTM Term',
   ];
   
   XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
@@ -423,17 +404,13 @@ export const exportCampaignShellsToExcel = (campaignShells: CampaignShell[]): Ar
     { wch: 15 }, // Impressions
     { wch: 18 }, // Working Media Budget
     { wch: 20 }, // Category
-    { wch: 20 }, // Targeting Layer ID
     { wch: 20 }, // Audience Name
     { wch: 20 }, // Accutics Line Item
-    { wch: 15 }, // Creative ID
     { wch: 25 }, // Creative Name
     { wch: 25 }, // Accutics Taxonomy Name
-    { wch: 30 }, // Asset Link
-    { wch: 30 }, // YouTube URL
+    { wch: 40 }, // Asset Link/YouTube URL
     { wch: 30 }, // Landing Page
     { wch: 35 }, // Landing Page with UTM
-    { wch: 15 }, // UTM Term
   ];
   
   worksheet['!cols'] = columnWidths;
@@ -495,17 +472,13 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
     'Impressions',
     'Working Media Budget',
     'Category',
-    'Targeting Layer ID',
     'Audience Name',
     'Accutics Line Item',
-    'Creative ID',
     'Creative Name',
     'Accutics Taxonomy Name',
-    'Asset Link',
-    'YouTube URL',
+    'Asset Link/YouTube URL',
     'Landing Page',
     'Landing Page with UTM',
-    'UTM Term',
   ];
   
   const csvRows = [headers.join(',')];
@@ -521,17 +494,13 @@ export const exportCampaignShellsToCSV = (campaignShells: CampaignShell[]): stri
       escapeCSVField(row.impressions),
       escapeCSVField(row.workingMediaBudget),
       escapeCSVField(row.category),
-      escapeCSVField(row.targetingLayerId),
       escapeCSVField(row.audienceName),
       escapeCSVField(row.accuticsLineItem),
-      escapeCSVField(row.creativeId),
       escapeCSVField(row.creativeName),
       escapeCSVField(row.accuticsTaxonomyName),
-      escapeCSVField(row.assetLink),
-      escapeCSVField(row.youtubeUrl),
+      escapeCSVField(row.assetLinkYoutubeUrl),
       escapeCSVField(row.landingPage),
       escapeCSVField(row.landingPageWithUTM),
-      escapeCSVField(row.utmTerm),
     ];
     csvRows.push(values.join(','));
   });
